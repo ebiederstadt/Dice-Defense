@@ -1,17 +1,29 @@
 local anim8 = require 'libraries/anim8'
 
+-- Checks to see if rectangles are overlapping with each other
+-- first_rect are tables that have x, y, width, and height defined
+function rect_collide(first_rect, second_rect)
+  return first_rect.x + first_rect.width > second_rect.x and first_rect.x < second_rect.x + second_rect.width and
+         first_rect.y + first_rect.height > second_rect.y and first_rect.y < second_rect.y + second_rect.y
+end
+
 function love.load()
+  love.graphics.setDefaultFilter('nearest', 'nearest')
+
   areaWidth = 800
   arenaHeight = 600
-  ship_radius = 30
   -- TODO: Eventually, we will create this randomly
   ship = {
     speed_x = 0,
     speed_y = 0,
 
-    -- Start in the middle of the screen
+    -- Hurt box
     x = 0,
-    y = arenaHeight / 2
+    y = arenaHeight / 2 - 5,
+    width = 64,
+    height = 64,
+    
+    sprite_sheet = love.graphics.newImage('sprites/ship.png')
   }
 
   -- These properties will be set according to the dice roll we get at the start
@@ -32,11 +44,12 @@ function love.load()
   enemy_timer = 0
   enemies = {{
       x = areaWidth,
-      y = love.math.random(arenaHeight)
+      y = love.math.random(arenaHeight),
+      width = 64,
+      height = 64
     }}
 
   -- Images and sprites
-  love.graphics.setDefaultFilter('nearest', 'nearest')
   math.randomseed(os.time()) -- Make our numbers actually random
 
   dice_timer_limit = 0.2
@@ -76,8 +89,10 @@ function love.update(dt)
     if bullet_timer >= bullet_timer_limit then
       bullet_timer = 0
       table.insert(bullets, {
-        x = ship.x + ship_radius,
-        y = ship.y
+        x = ship.x + ship.width / 2,
+        y = ship.y + ship.height / 2,
+        width = 8,
+        height = 8
       })
     end
   end
@@ -86,16 +101,16 @@ function love.update(dt)
   -- TODO: needs to be polished
   ship.x = ship.x + ship.speed_x * dt
   ship.y = ship.y + ship.speed_y * dt
-  if ship.x > areaWidth then
-    ship.x = areaWidth
+  if ship.x + ship.width > areaWidth then
+    ship.x = areaWidth - ship.width
     ship.speed_x = 0
   end
   if ship.x < 0 then
     ship.x = 0
     ship.speed_x = 0
   end
-  if ship.y > arenaHeight then
-    ship.y = arenaHeight
+  if ship.y + ship.height > arenaHeight then
+    ship.y = arenaHeight - ship.height
     ship.speed_y = 0
   end
   if ship.y < 0 then
@@ -104,12 +119,12 @@ function love.update(dt)
   end
 
   -- Move the bullets, and remove them after the reach the edge of the screen
-  -- TODO: This might be something that we want to randomize
+  -- TODO: Movement speed could be something that we randomize
   local bullet_speed = 500
   for bullet_index = #bullets, 1, -1 do
     local bullet = bullets[bullet_index]
     bullet.x = bullet.x + bullet_speed * dt
-    if bullet.x > areaWidth then
+    if bullet.x + bullet.width > areaWidth then
       table.remove(bullets, bullet_index)
     end
   end
@@ -119,12 +134,14 @@ function love.update(dt)
   if enemy_timer >= enemy_timer_limit then
     table.insert(enemies, {
       x = areaWidth,
-      y = love.math.random(arenaHeight)
+      y = love.math.random(arenaHeight),
+      width = 64,
+      height = 64
     })
     enemy_timer = 0
   end
 
-  -- Move the enemies
+  -- Move the enemies and check to see if they collided with the player or the bullets
   -- TODO: Set this randomly
   local enemy_speed = 200
   for enemy_index = #enemies, 1, -1 do
@@ -132,6 +149,18 @@ function love.update(dt)
     enemy.x = enemy.x - enemy_speed * dt
     if enemy.x < 0 then
       table.remove(enemies, enemy_index)
+    end
+    if rect_collide(enemy, ship) then
+      -- TODO: Display a screen to indicate that the player lost the game, instead of jfust quitting
+      love.event.quit(0)
+    end
+
+    for bullet_index = #bullets, 1, -1 do
+      local bullet = bullets[bullet_index]
+      if rect_collide(bullet, enemy) then
+        table.remove(bullets, bullet_index)
+        table.remove(enemies, enemy_index)
+      end
     end
   end
 
@@ -159,19 +188,23 @@ end
 
 function love.draw()
   -- Draw the ship
+  -- TODO: In the future, only draw the sprite
   love.graphics.setColor(0, 0, 1)
-  love.graphics.circle('fill', ship.x, ship.y, ship_radius)
+  local ship_scale_factor = 2
+  love.graphics.rectangle('line', ship.x, ship.y, ship.width, ship.height)
+  love.graphics.setColor(1, 1, 1)
+  love.graphics.draw(ship.sprite_sheet, ship.x, ship.y, 0, ship_scale_factor, ship_scale_factor)
 
   -- Draw the bullets
   for bullet_index, bullet in ipairs(bullets) do
     love.graphics.setColor(0, 1, 0)
-    love.graphics.circle('fill', bullet.x, bullet.y, 5)
+    love.graphics.rectangle('fill', bullet.x, bullet.y, bullet.width, bullet.height)
   end
 
   -- Draw the enemies
   for enemy_index, enemy in ipairs(enemies) do
     love.graphics.setColor(1, 0, 0)
-    love.graphics.circle('fill', enemy.x, enemy.y, 40)
+    love.graphics.rectangle('fill', enemy.x, enemy.y, enemy.width, enemy.height)
   end
 
   -- Draw the dice if we are in the 
