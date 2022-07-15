@@ -1,4 +1,4 @@
-require 'utils'
+local anim8 = require 'libraries/anim8'
 
 function love.load()
   areaWidth = 800
@@ -14,6 +14,14 @@ function love.load()
     y = arenaHeight / 2
   }
 
+  -- These properties will be set according to the dice roll we get at the start
+  player_properties = {
+    max_speed = 0,
+    acceleration = 0,
+    shooting_speed = 0,
+    projectile_size = 0
+  }
+
   -- TODO: Set this randomly
   bullet_timer_limit = 0.5
   bullet_timer = bullet_timer_limit
@@ -26,6 +34,21 @@ function love.load()
       x = areaWidth,
       y = love.math.random(arenaHeight)
     }}
+
+  -- Images and sprites
+  love.graphics.setDefaultFilter('nearest', 'nearest')
+  math.randomseed(os.time()) -- Make our numbers actually random
+
+  dice_timer_limit = 0.2
+  dice_timer = dice_timer_limit
+  dice_scene_timer_max = 3.0
+  dice_scene_timer = 0.0
+  sprite_sheet = love.graphics.newImage('sprites/dice.png')
+  local grid = anim8.newGrid(32, 32, sprite_sheet:getWidth(), sprite_sheet:getHeight())
+  player_animation_speed = anim8.newAnimation(grid('1-6', 1), 0.5)
+  player_animation_acceleration = anim8.newAnimation(grid('1-6', 1), 0.5)
+  player_animation_shooting_speed = anim8.newAnimation(grid('1-6', 1), 0.5)
+  player_animation_projectile_size = anim8.newAnimation(grid('1-6', 1), 0.5)
 end
 
 function love.update(dt)
@@ -65,15 +88,19 @@ function love.update(dt)
   ship.y = ship.y + ship.speed_y * dt
   if ship.x > areaWidth then
     ship.x = areaWidth
+    ship.speed_x = 0
   end
   if ship.x < 0 then
     ship.x = 0
+    ship.speed_x = 0
   end
   if ship.y > arenaHeight then
     ship.y = arenaHeight
+    ship.speed_y = 0
   end
   if ship.y < 0 then
     ship.y = 0
+    ship.speed_y = 0
   end
 
   -- Move the bullets, and remove them after the reach the edge of the screen
@@ -107,6 +134,27 @@ function love.update(dt)
       table.remove(enemies, enemy_index)
     end
   end
+
+  -- Animate the dice (we want to go to a random frame each time)
+  dice_timer = dice_timer + dt
+  dice_scene_timer = dice_scene_timer + dt
+
+  -- Prevent any overflows (no idea if this would actually be an issue)
+  if dice_scene_timer >= dice_scene_timer_max then
+    dice_scene_timer = dice_scene_timer_max
+  end
+  if dice_timer >= dice_timer_limit then
+    player_properties.max_speed = math.random(1, 6)
+    player_properties.acceleration = math.random(1, 6)
+    player_properties.shooting_speed = math.random(1, 6)
+    player_properties.projectile_size = math.random(1, 6)
+
+    player_animation_speed:gotoFrame(player_properties.max_speed)
+    player_animation_acceleration:gotoFrame(player_properties.acceleration)
+    player_animation_shooting_speed:gotoFrame(player_properties.shooting_speed)
+    player_animation_projectile_size:gotoFrame(player_properties.projectile_size)
+    dice_timer = 0
+  end
 end
 
 function love.draw()
@@ -124,5 +172,16 @@ function love.draw()
   for enemy_index, enemy in ipairs(enemies) do
     love.graphics.setColor(1, 0, 0)
     love.graphics.circle('fill', enemy.x, enemy.y, 40)
+  end
+
+  -- Draw the dice if we are in the 
+  if dice_scene_timer < dice_scene_timer_max then
+    love.graphics.setColor(1, 1, 1)
+    local scale_factor = 2
+    local half_single_sprite = sprite_sheet:getWidth() / 12
+    player_animation_speed:draw(sprite_sheet, (areaWidth / 5) - half_single_sprite * scale_factor, 50, 0, scale_factor, scale_factor)
+    player_animation_acceleration:draw(sprite_sheet, (areaWidth * 2 / 5) - half_single_sprite * scale_factor, 50, 0, scale_factor, scale_factor)
+    player_animation_shooting_speed:draw(sprite_sheet, (areaWidth * 3 / 5) - half_single_sprite * scale_factor, 50, 0, scale_factor, scale_factor)
+    player_animation_projectile_size:draw(sprite_sheet, (areaWidth * 4 / 5) - half_single_sprite * scale_factor, 50, 0, scale_factor, scale_factor)
   end
 end
