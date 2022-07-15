@@ -1,0 +1,8 @@
+name = "GMTK Game Jam"
+default_targets = ["win64", "lovejs"]
+build_directory = "makelove-build"
+
+love_files = [
+    "::git-ls-tree::",
+    "-*/.*",
+]
