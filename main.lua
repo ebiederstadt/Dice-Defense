@@ -1,8 +1,9 @@
-local anim8 = require 'libraries/anim8'
 local button = require 'button'
 
 local player = require 'player'
+local dice = require 'dice'
 
+require 'constants'
 
 -- Checks to see if rectangles are overlapping with each other
 -- first_rect are tables that have x, y, width, and height defined
@@ -20,6 +21,7 @@ end
 
 function love.load()
   love.graphics.setDefaultFilter('nearest', 'nearest')
+  math.randomseed(os.time())
 
   button.setup()
 
@@ -46,6 +48,7 @@ function love.load()
     "Start",
     function()
       is_started = true
+      dice.start(3, 0.2)
       sounds.start_game:play()
       sounds.main_theme:play()
     end
@@ -76,6 +79,8 @@ function love.load()
       win_state.lost = false
       is_paused = false
       is_started = false
+      sounds.win_theme:stop()
+      sounds.lose_theme:stop()
       for i, v in ipairs(enemies) do
         table.remove(enemies, i)
       end
@@ -92,8 +97,6 @@ function love.load()
     end
   ))
 
-  arenaWidth = 800
-  arenaHeight = 600
   -- TODO: Eventually, we will create this randomly
   ship = player.new_player()
 
@@ -122,19 +125,8 @@ function love.load()
     }}
   enemy_sprite = love.graphics.newImage('sprites/destroyer.png')
 
-  -- Images and sprites
-  math.randomseed(os.time()) -- Make our numbers actually random
-
-  dice_timer_limit = 0.2
-  dice_timer = dice_timer_limit
-  dice_scene_timer_max = 3.0
-  dice_scene_timer = 0.0
-  sprite_sheet = love.graphics.newImage('sprites/dice.png')
-  local grid = anim8.newGrid(32, 32, sprite_sheet:getWidth(), sprite_sheet:getHeight())
-  player_animation_speed = anim8.newAnimation(grid('1-6', 1), 0.5)
-  player_animation_acceleration = anim8.newAnimation(grid('1-6', 1), 0.5)
-  player_animation_shooting_speed = anim8.newAnimation(grid('1-6', 1), 0.5)
-  player_animation_projectile_size = anim8.newAnimation(grid('1-6', 1), 0.5)
+  dice.init()
+  dice_result = {}
 
   background = love.graphics.newImage("sprites/background.png")
   background:setWrap("repeat", "repeat")
@@ -159,11 +151,20 @@ function love.load()
     lose_theme = love.audio.newSource('sounds/OneSlyMove.ogg', 'stream')
   }
 
+  -- Some of the sounds should loop
+  sounds.win_theme:setLooping(true)
+  sounds.lose_theme:setLooping(true)
+
 end
 
 function love.keypressed(key)
   if key == "escape" then
     is_paused = not is_paused
+    if is_paused then
+      sounds.main_theme:setVolume(0.8)
+    else
+      sounds.main_theme.setVolume(1.0)
+    end
   end
   -- TODO: remove me, just for testing for now
   if key == 'p' then
@@ -290,24 +291,11 @@ function love.update(dt)
   end
 
   -- Animate the dice (we want to go to a random frame each time)
-  dice_timer = dice_timer + dt
-  dice_scene_timer = dice_scene_timer + dt
-
-  -- Prevent any overflows (no idea if this would actually be an issue)
-  if dice_scene_timer >= dice_scene_timer_max then
-    dice_scene_timer = dice_scene_timer_max
-  end
-  if dice_timer >= dice_timer_limit then
-    player_properties.max_speed = math.random(1, 6)
-    player_properties.acceleration = math.random(1, 6)
-    player_properties.shooting_speed = math.random(1, 6)
-    player_properties.projectile_size = math.random(1, 6)
-
-    player_animation_speed:gotoFrame(player_properties.max_speed)
-    player_animation_acceleration:gotoFrame(player_properties.acceleration)
-    player_animation_shooting_speed:gotoFrame(player_properties.shooting_speed)
-    player_animation_projectile_size:gotoFrame(player_properties.projectile_size)
-    dice_timer = 0
+  dice_result = dice.update(dt)
+  if dice_result then
+    for i, dice in ipairs(dice_result) do
+      print(dice)
+    end
   end
 end
 
@@ -372,15 +360,7 @@ function love.draw()
     love.graphics.draw(enemy_sprite, enemy.x, enemy.y - 15, 0, enemy_scale_factor, enemy_scale_factor)
   end
 
-  if dice_scene_timer < dice_scene_timer_max then
-    love.graphics.setColor(1, 1, 1)
-    local scale_factor = 2
-    local half_single_sprite = sprite_sheet:getWidth() / 12
-    player_animation_speed:draw(sprite_sheet, (arenaWidth / 5) - half_single_sprite * scale_factor, 50, 0, scale_factor, scale_factor)
-    player_animation_acceleration:draw(sprite_sheet, (arenaWidth * 2 / 5) - half_single_sprite * scale_factor, 50, 0, scale_factor, scale_factor)
-    player_animation_shooting_speed:draw(sprite_sheet, (arenaWidth * 3 / 5) - half_single_sprite * scale_factor, 50, 0, scale_factor, scale_factor)
-    player_animation_projectile_size:draw(sprite_sheet, (arenaWidth * 4 / 5) - half_single_sprite * scale_factor, 50, 0, scale_factor, scale_factor)
-  end
+  dice.draw()
 
   if is_paused then
     love.graphics.setColor(0.008, 0.051, 0.122)
