@@ -21,6 +21,8 @@ end
 function love.load()
   love.graphics.setDefaultFilter('nearest', 'nearest')
 
+  button.setup()
+
   -- Pause menu
   is_paused = false
   pause_buttons = {}
@@ -44,6 +46,8 @@ function love.load()
     "Start",
     function()
       is_started = true
+      sounds.start_game:play()
+      sounds.main_theme:play()
     end
   ))
   table.insert(main_buttons , button.newButton(
@@ -143,6 +147,18 @@ function love.load()
     local font = love.graphics.newFont(font_path, 64)
     love.graphics.setFont(font)
   end
+
+  -- Sounds
+  sounds = {
+    laser = love.audio.newSource('sounds/laserSmall.ogg', 'static'),
+    enemy_explosion = love.audio.newSource('sounds/explosionCrunch.ogg', 'static'),
+    player_explosion = love.audio.newSource('sounds/explosionCrunch_003.ogg', 'static'),
+    start_game = love.audio.newSource('sounds/doorOpen_002.ogg', 'static'),
+    main_theme = love.audio.newSource('sounds/VoxelRevolution.ogg', 'stream'),
+    win_theme = love.audio.newSource('sounds/GettingitDone.ogg', 'stream'),
+    lose_theme = love.audio.newSource('sounds/OneSlyMove.ogg', 'stream')
+  }
+
 end
 
 function love.keypressed(key)
@@ -152,6 +168,8 @@ function love.keypressed(key)
   -- TODO: remove me, just for testing for now
   if key == 'p' then
     win_state.won = true
+    sounds.main_theme:stop()
+    sounds.win_theme:play()
   end
 end
 
@@ -197,6 +215,7 @@ function love.update(dt)
         width = 8,
         height = 8
       })
+      sounds.laser:play()
     end
   end
 
@@ -254,8 +273,10 @@ function love.update(dt)
       table.remove(enemies, enemy_index)
     end
     if rect_collide(enemy, ship) then
-      -- TODO: Display a screen to indicate that the player lost the game, instead of just quitting
       win_state.lost = true
+      sounds.player_explosion:play()
+      sounds.main_theme:stop()
+      sounds.lose_theme:play()
     end
 
     for bullet_index = #bullets, 1, -1 do
@@ -263,6 +284,7 @@ function love.update(dt)
       if rect_collide(bullet, enemy) then
         table.remove(bullets, bullet_index)
         table.remove(enemies, enemy_index)
+        sounds.enemy_explosion:play()
       end
     end
   end
@@ -306,7 +328,7 @@ function love.draw()
   
   if win_state.won then
     love.graphics.setColor(0.008, 0.051, 0.122)
-    love.graphics.rectangle('fill', arenaWidth / 2 - 150, 50, 300, 100, 10, 10)
+    love.graphics.rectangle('fill', arenaWidth / 2 - 150, 100, 300, 100, 10, 10)
     love.graphics.setColor(1, 1, 1)
     draw_centered_text(0, 100, arenaWidth, 0, "You Won! Well Done")
 
@@ -314,8 +336,6 @@ function love.draw()
     return
   end
   if win_state.lost then
-    love.graphics.setColor(0.008, 0.051, 0.122)
-    love.graphics.rectangle('fill', arenaWidth / 2 - 150, 50, 300, 100, 10, 10)
     love.graphics.setColor(1, 1, 1)
     draw_centered_text(0, 100, arenaWidth, 0, "You Lost.")
 
