@@ -147,6 +147,7 @@ function love.load()
     win_theme = love.audio.newSource('sounds/GettingitDone.ogg', 'stream'),
     lose_theme = love.audio.newSource('sounds/OneSlyMove.ogg', 'stream')
   }
+  love.audio.setVolume(0.5)
 
   -- Some of the sounds should loop
   sounds.win_theme:setLooping(true)
