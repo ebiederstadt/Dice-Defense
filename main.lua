@@ -1,4 +1,6 @@
 local anim8 = require 'libraries/anim8'
+local button = require 'button'
+
 
 -- Checks to see if rectangles are overlapping with each other
 -- first_rect are tables that have x, y, width, and height defined
@@ -7,10 +9,33 @@ function rect_collide(first_rect, second_rect)
          first_rect.y + first_rect.height > second_rect.y and first_rect.y < second_rect.y + second_rect.width
 end
 
+function draw_centered_text(rectX, rectY, rectWidth, rectHeight, text)
+	local font = love.graphics.getFont()
+	local textWidth = font:getWidth(text)
+	local textHeight = font:getHeight()
+	love.graphics.print(text, rectX+rectWidth/2, rectY+rectHeight/2, 0, 1, 1, textWidth/2, textHeight/2)
+end
+
 function love.load()
   love.graphics.setDefaultFilter('nearest', 'nearest')
 
-  areaWidth = 800
+  -- Pause menu
+  is_paused = false
+  pause_buttons = {}
+  table.insert(pause_buttons, button.newButton(
+    "Continue",
+    function()
+      is_paused = false
+    end
+  ))
+  table.insert(pause_buttons, button.newButton(
+    "Quit",
+    function()
+      love.event.quit(0)
+    end
+  ))
+
+  arenaWidth = 800
   arenaHeight = 600
   -- TODO: Eventually, we will create this randomly
   ship = {
@@ -44,7 +69,7 @@ function love.load()
   enemy_timer_limit = 1.0
   enemy_timer = 0
   enemies = {{
-      x = areaWidth,
+      x = arenaWidth,
       y = love.math.random(arenaHeight),
       width = 120,
       height = 64
@@ -73,12 +98,22 @@ function love.load()
   -- Fonts
   local font_path = 'fonts/VCR_OSD_MONO_1.001.ttf'
   if love.filesystem.exists(font_path) then
-    font = love.graphics.newFont(font_path, 32)
+    local font = love.graphics.newFont(font_path, 64)
     love.graphics.setFont(font)
   end
 end
 
+function love.keypressed(key)
+  if key == "escape" then
+    is_paused = not is_paused
+  end
+end
+
 function love.update(dt)
+  if is_paused then
+    return
+  end
+
   -- TODO: This will be set randomly
   local shipSpeed = 100
   -- TODO: It could be nice to let the users choose their controls (advanced feature)
@@ -115,8 +150,8 @@ function love.update(dt)
   -- TODO: needs to be polished
   ship.x = ship.x + ship.speed_x * dt
   ship.y = ship.y + ship.speed_y * dt
-  if ship.x + ship.width > areaWidth then
-    ship.x = areaWidth - ship.width
+  if ship.x + ship.width > arenaWidth then
+    ship.x = arenaWidth - ship.width
     ship.speed_x = 0
   end
   if ship.x < 0 then
@@ -138,7 +173,7 @@ function love.update(dt)
   for bullet_index = #bullets, 1, -1 do
     local bullet = bullets[bullet_index]
     bullet.x = bullet.x + bullet_speed * dt
-    if bullet.x + bullet.width > areaWidth then
+    if bullet.x + bullet.width > arenaWidth then
       table.remove(bullets, bullet_index)
     end
   end
@@ -147,7 +182,7 @@ function love.update(dt)
   enemy_timer = enemy_timer + dt
   if enemy_timer >= enemy_timer_limit then
     table.insert(enemies, {
-      x = areaWidth,
+      x = arenaWidth,
       y = love.math.random(arenaHeight),
       width = 120,
       height = 64
@@ -235,14 +270,22 @@ function love.draw()
     love.graphics.draw(enemy_sprite, enemy.x, enemy.y - 15, 0, enemy_scale_factor, enemy_scale_factor)
   end
 
-  -- Draw the dice if we are in the 
   if dice_scene_timer < dice_scene_timer_max then
     love.graphics.setColor(1, 1, 1)
     local scale_factor = 2
     local half_single_sprite = sprite_sheet:getWidth() / 12
-    player_animation_speed:draw(sprite_sheet, (areaWidth / 5) - half_single_sprite * scale_factor, 50, 0, scale_factor, scale_factor)
-    player_animation_acceleration:draw(sprite_sheet, (areaWidth * 2 / 5) - half_single_sprite * scale_factor, 50, 0, scale_factor, scale_factor)
-    player_animation_shooting_speed:draw(sprite_sheet, (areaWidth * 3 / 5) - half_single_sprite * scale_factor, 50, 0, scale_factor, scale_factor)
-    player_animation_projectile_size:draw(sprite_sheet, (areaWidth * 4 / 5) - half_single_sprite * scale_factor, 50, 0, scale_factor, scale_factor)
+    player_animation_speed:draw(sprite_sheet, (arenaWidth / 5) - half_single_sprite * scale_factor, 50, 0, scale_factor, scale_factor)
+    player_animation_acceleration:draw(sprite_sheet, (arenaWidth * 2 / 5) - half_single_sprite * scale_factor, 50, 0, scale_factor, scale_factor)
+    player_animation_shooting_speed:draw(sprite_sheet, (arenaWidth * 3 / 5) - half_single_sprite * scale_factor, 50, 0, scale_factor, scale_factor)
+    player_animation_projectile_size:draw(sprite_sheet, (arenaWidth * 4 / 5) - half_single_sprite * scale_factor, 50, 0, scale_factor, scale_factor)
+  end
+
+  if is_paused then
+    love.graphics.setColor(0.008, 0.051, 0.122)
+    love.graphics.rectangle('fill', arenaWidth / 2 - 150, 50, 300, 100, 10, 10)
+    love.graphics.setColor(1, 1, 1)
+    draw_centered_text(0, 100, arenaWidth, 0, "Paused")
+
+    button.draw_buttons(pause_buttons)
   end
 end
