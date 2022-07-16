@@ -35,6 +35,28 @@ function love.load()
     end
   ))
 
+  -- Main menu
+  is_started = false
+  main_buttons = {}
+  table.insert(main_buttons, button.newButton(
+    "Start",
+    function()
+      is_started = true
+    end
+  ))
+  table.insert(main_buttons , button.newButton(
+    "How to Play",
+    function()
+      print('TODO: implement the how to play screen')
+    end
+  ))
+  table.insert(main_buttons, button.newButton(
+    "Quit",
+    function()
+      love.event.quit(0)
+    end
+  ))
+
   arenaWidth = 800
   arenaHeight = 600
   -- TODO: Eventually, we will create this randomly
@@ -111,6 +133,10 @@ end
 
 function love.update(dt)
   if is_paused then
+    return
+  end
+
+  if not is_started then
     return
   end
 
@@ -236,15 +262,24 @@ function love.update(dt)
 end
 
 function love.draw()
-  -- Move and draw the background
+  love.graphics.setColor(1, 1, 1)
+  background_quad:setViewport(background_pos, 0, background:getWidth(), background:getHeight())
+  love.graphics.draw(background, background_quad, 0, 0, 0)
+
+  if not is_started then
+    love.graphics.setColor(0.008, 0.051, 0.122)
+    love.graphics.rectangle('fill', arenaWidth / 2 - 150, 50, 300, 100, 10, 10)
+    love.graphics.setColor(1, 1, 1)
+    draw_centered_text(0, 100, arenaWidth, 0, "Rolling Racer") -- TODO: need a better name
+
+    button.draw_buttons(main_buttons)
+    return
+  end
+
   background_pos = background_pos + 0.5
   if background_pos > background:getWidth() then
     background_pos = 0
   end
-
-  love.graphics.setColor(1, 1, 1)
-  background_quad:setViewport(background_pos, 0, background:getWidth(), background:getHeight())
-  love.graphics.draw(background, background_quad, 0, 0, 0)
   
   -- Draw the ship
   -- TODO: In the future, only draw the sprite
