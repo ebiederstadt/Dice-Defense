@@ -1,6 +1,8 @@
 local anim8 = require 'libraries/anim8'
 local button = require 'button'
 
+local player = require 'player'
+
 
 -- Checks to see if rectangles are overlapping with each other
 -- first_rect are tables that have x, y, width, and height defined
@@ -34,7 +36,7 @@ function love.load()
       love.event.quit(0)
     end
   ))
-
+ 
   -- Main menu
   is_started = false
   main_buttons = {}
@@ -57,21 +59,39 @@ function love.load()
     end
   ))
 
+  -- Win/ Loss screens
+  win_state = {
+    won = false,
+    lost = false,
+  }
+  end_buttons = {}
+  table.insert(end_buttons, button.newButton(
+    "Play Again?",
+    function()
+      win_state.won = false
+      win_state.lost = false
+      is_paused = false
+      is_started = false
+      for i, v in ipairs(enemies) do
+        table.remove(enemies, i)
+      end
+      for i, v in ipairs(bullets) do
+        table.remove(bullets, i)
+      end
+      player.reset_player(ship)
+    end
+  ))
+  table.insert(end_buttons, button.newButton(
+    "Quit",
+    function()
+      love.event.quit(0)
+    end
+  ))
+
   arenaWidth = 800
   arenaHeight = 600
   -- TODO: Eventually, we will create this randomly
-  ship = {
-    speed_x = 0,
-    speed_y = 0,
-
-    -- Hurt box
-    x = 0,
-    y = arenaHeight / 2 - 5,
-    width = 100,
-    height = 64,
-    
-    sprite_sheet = love.graphics.newImage('sprites/ship.png')
-  }
+  ship = player.new_player()
 
   -- These properties will be set according to the dice roll we get at the start
   player_properties = {
@@ -129,6 +149,10 @@ function love.keypressed(key)
   if key == "escape" then
     is_paused = not is_paused
   end
+  -- TODO: remove me, just for testing for now
+  if key == 'p' then
+    win_state.won = true
+  end
 end
 
 function love.update(dt)
@@ -137,6 +161,10 @@ function love.update(dt)
   end
 
   if not is_started then
+    return
+  end
+
+  if win_state.won or win_state.lost then
     return
   end
 
@@ -226,8 +254,8 @@ function love.update(dt)
       table.remove(enemies, enemy_index)
     end
     if rect_collide(enemy, ship) then
-      -- TODO: Display a screen to indicate that the player lost the game, instead of jfust quitting
-      love.event.quit(0)
+      -- TODO: Display a screen to indicate that the player lost the game, instead of just quitting
+      win_state.lost = true
     end
 
     for bullet_index = #bullets, 1, -1 do
@@ -273,6 +301,25 @@ function love.draw()
     draw_centered_text(0, 100, arenaWidth, 0, "Rolling Racer") -- TODO: need a better name
 
     button.draw_buttons(main_buttons)
+    return
+  end
+  
+  if win_state.won then
+    love.graphics.setColor(0.008, 0.051, 0.122)
+    love.graphics.rectangle('fill', arenaWidth / 2 - 150, 50, 300, 100, 10, 10)
+    love.graphics.setColor(1, 1, 1)
+    draw_centered_text(0, 100, arenaWidth, 0, "You Won! Well Done")
+
+    button.draw_buttons(end_buttons)
+    return
+  end
+  if win_state.lost then
+    love.graphics.setColor(0.008, 0.051, 0.122)
+    love.graphics.rectangle('fill', arenaWidth / 2 - 150, 50, 300, 100, 10, 10)
+    love.graphics.setColor(1, 1, 1)
+    draw_centered_text(0, 100, arenaWidth, 0, "You Lost.")
+
+    button.draw_buttons(end_buttons)
     return
   end
 
