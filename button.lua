@@ -50,11 +50,11 @@ local function draw_buttons(buttons)
     local button_x = (arenaWidth / 2) - (button_width / 2)
     local button_y = (arenaHeight / 2) - (total_height / 2) + cursor_y
 
-    local color = { 0.4, 0.4, 0.8, 0.8 };
+    local color = ui_color
     button.current_state.hovered = mouse_x > button_x and mouse_x < button_x + button_width and
                                    mouse_y > button_y and mouse_y < button_y + BUTTON_HEIGHT
     if button.current_state.hovered then
-      color = { 0.8, 0.4, 1.0, 0.8 };
+      color = highlight_color;
     end
 
     -- Enter event
@@ -80,8 +80,47 @@ local function draw_buttons(buttons)
   end
 end
 
+local function draw_button_custom_pos(button, button_x, button_y)
+  local button_width = 200
+  local margin = 16
+  local total_height = BUTTON_HEIGHT + margin
+  local cursor_y = 0
+  local mouse_x, mouse_y = love.mouse.getPosition()
+
+  button.previous_state = deepcopy(button.current_state)
+
+  local color = ui_color
+  button.current_state.hovered = mouse_x > button_x and mouse_x < button_x + button_width and
+                                  mouse_y > button_y and mouse_y < button_y + BUTTON_HEIGHT
+  if button.current_state.hovered then
+    color = highlight_color;
+  end
+
+  -- Enter event
+  if button.current_state.hovered and not button.previous_state.hovered then
+    sounds.enter:play();
+  end
+  -- Leave event
+  if not button.current_state.hovered and button.previous_state.hovered then
+    sounds.leave:play()
+  end
+
+  button.current_state.clicked = love.mouse.isDown(1)
+  if button.current_state.clicked and not button.previous_state.clicked and button.current_state.hovered then
+    button.fn()
+  end
+  
+  love.graphics.setColor(unpack(color))
+  love.graphics.rectangle('fill', button_x, button_y, button_width, BUTTON_HEIGHT, 15, 15)
+  love.graphics.setColor(1, 1, 1)
+  draw_centered_text(button_x, button_y, button_width, BUTTON_HEIGHT, button.text)
+
+  cursor_y = cursor_y + (BUTTON_HEIGHT + margin)
+end
+
 button.setup = setup
 button.newButton = newButton
-button.draw_buttons =draw_buttons
+button.draw_buttons = draw_buttons
+button.draw_button_custom_pos = draw_button_custom_pos
 
 return button

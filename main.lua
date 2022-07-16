@@ -3,20 +3,13 @@ local button = require 'button'
 local player = require 'player'
 local dice = require 'dice'
 
-require 'constants'
+require 'utils'
 
 -- Checks to see if rectangles are overlapping with each other
 -- first_rect are tables that have x, y, width, and height defined
 function rect_collide(first_rect, second_rect)
   return first_rect.x + first_rect.width > second_rect.x and first_rect.x < second_rect.x + second_rect.width and
          first_rect.y + first_rect.height > second_rect.y and first_rect.y < second_rect.y + second_rect.width
-end
-
-function draw_centered_text(rectX, rectY, rectWidth, rectHeight, text)
-	local font = love.graphics.getFont()
-	local textWidth = font:getWidth(text)
-	local textHeight = font:getHeight()
-	love.graphics.print(text, rectX+rectWidth/2, rectY+rectHeight/2, 0, 1, 1, textWidth/2, textHeight/2)
 end
 
 function love.load()
@@ -125,7 +118,12 @@ function love.load()
     }}
   enemy_sprite = love.graphics.newImage('sprites/destroyer.png')
 
-  dice.init()
+  finished_dice = false
+  dice.init(
+    function()
+      finished_dice = true
+    end
+  )
   dice_result = {}
 
   background = love.graphics.newImage("sprites/background.png")
@@ -134,10 +132,9 @@ function love.load()
   background_pos = 0
 
   -- Fonts
-  local font_path = 'fonts/VCR_OSD_MONO_1.001.ttf'
-  if love.filesystem.exists(font_path) then
-    local font = love.graphics.newFont(font_path, 64)
-    love.graphics.setFont(font)
+  main_font = create_font(64)
+  if main_font then
+    love.graphics.setFont(main_font)
   end
 
   -- Sounds
@@ -184,6 +181,18 @@ function love.update(dt)
   end
 
   if win_state.won or win_state.lost then
+    return
+  end
+
+  dice_result = dice.update(dt)
+  if dice_result then
+    for i, dice in ipairs(dice_result) do
+      print(dice)
+    end
+  end
+
+  -- Only perform the main simulation if we are not rolling the dice
+  if not finished_dice then
     return
   end
 
@@ -289,14 +298,6 @@ function love.update(dt)
       end
     end
   end
-
-  -- Animate the dice (we want to go to a random frame each time)
-  dice_result = dice.update(dt)
-  if dice_result then
-    for i, dice in ipairs(dice_result) do
-      print(dice)
-    end
-  end
 end
 
 function love.draw()
@@ -311,6 +312,11 @@ function love.draw()
     draw_centered_text(0, 100, arenaWidth, 0, "Rolling Racer") -- TODO: need a better name
 
     button.draw_buttons(main_buttons)
+    return
+  end
+
+  if not finished_dice then
+    dice.draw(main_font)
     return
   end
   
@@ -359,8 +365,6 @@ function love.draw()
     love.graphics.setColor(1, 1, 1)
     love.graphics.draw(enemy_sprite, enemy.x, enemy.y - 15, 0, enemy_scale_factor, enemy_scale_factor)
   end
-
-  dice.draw()
 
   if is_paused then
     love.graphics.setColor(0.008, 0.051, 0.122)
