@@ -66,7 +66,7 @@ function love.load()
   }
   end_buttons = {}
   table.insert(end_buttons, button.newButton(
-    "Play Again?",
+    "Play Again",
     function()
       win_state.won = false
       win_state.lost = false
@@ -99,6 +99,10 @@ function love.load()
     acceleration = 0,
     shooting_speed = 0,
     projectile_size = 0
+  }
+  enemy_properties = {
+    max_speed = 3,
+    acceleration = 3
   }
 
   -- TODO: Set this randomly
@@ -143,6 +147,7 @@ function love.load()
     enemy_explosion = love.audio.newSource('sounds/explosionCrunch.ogg', 'static'),
     player_explosion = love.audio.newSource('sounds/explosionCrunch_003.ogg', 'static'),
     start_game = love.audio.newSource('sounds/doorOpen_002.ogg', 'static'),
+    can_randomize = love.audio.newSource('sounds/computerNoise_000.ogg', 'static'),
     main_theme = love.audio.newSource('sounds/VoxelRevolution.ogg', 'stream'),
     win_theme = love.audio.newSource('sounds/GettingitDone.ogg', 'stream'),
     lose_theme = love.audio.newSource('sounds/OneSlyMove.ogg', 'stream')
@@ -153,15 +158,41 @@ function love.load()
   sounds.win_theme:setLooping(true)
   sounds.lose_theme:setLooping(true)
 
+  sounds.can_randomize:setVolume(1.0)
+
+  -- Randomizing enemies
+  dice_indcators = {
+    normal = love.graphics.newImage('sprites/dice_normal.png'),
+    modified = love.graphics.newImage('sprites/dice_modified.png')
+  }
+  randomize_enemy_limit = 7
+  randomize_enemy_timer = 0
+  notified = false
+  rolling_enemy_dice = false
+  finished_roll_but_not_finished_showing_result = false
+  enemy_dice_result = {}
+  time_to_show_dice = 2
+  dice_result_timer = 0
 end
 
 function love.keypressed(key)
   if key == "escape" then
-    is_paused = not is_paused
-    if is_paused then
-      sounds.main_theme:setVolume(0.8)
-    else
-      sounds.main_theme.setVolume(1.0)
+    if is_started and finished_dice then
+      is_paused = not is_paused
+      if is_paused then
+        sounds.main_theme:setVolume(0.8)
+      else
+        sounds.main_theme:setVolume(1.0)
+      end
+    end
+  end
+  -- Enter will allow the user to randomize the enemy stats
+  if key == 'return' then
+    if randomize_enemy_timer >= randomize_enemy_limit and not rolling_enemy_dice then
+      randomize_enemy_timer = 0
+      notified = false
+      rolling_enemy_dice = true
+      dice.start(2, 0.2)
     end
   end
   -- TODO: remove me, just for testing for now
@@ -186,9 +217,28 @@ function love.update(dt)
   end
 
   dice_result = dice.update(dt)
-  if dice_result then
-    for i, dice in ipairs(dice_result) do
-      print(dice)
+  -- TODO: Do something with the dice!
+  -- if dice_result then
+  -- end
+
+  if rolling_enemy_dice then
+    enemy_dice_result = dice.update(dt)
+    if enemy_dice_result then
+      print("Test!")
+      rolling_enemy_dice = false
+      finished_roll_but_not_finished_showing_result = true
+      for i, dice in ipairs(enemy_dice_result) do
+        -- TODO: Do something with the result
+        print(dice)
+      end
+    end
+  end
+
+  if finished_roll_but_not_finished_showing_result then
+    dice_result_timer = dice_result_timer + dt
+    if dice_result_timer >= time_to_show_dice then
+      finished_roll_but_not_finished_showing_result = false
+      dice_result_timer = 0
     end
   end
 
@@ -299,6 +349,13 @@ function love.update(dt)
       end
     end
   end
+
+  -- Update the dice timer
+  randomize_enemy_timer = randomize_enemy_timer + dt
+  if randomize_enemy_timer >= randomize_enemy_limit and not notified then
+    sounds.can_randomize:play()
+    notified = true
+  end
 end
 
 function love.draw()
@@ -374,5 +431,17 @@ function love.draw()
     draw_centered_text(0, 100, arenaWidth, 0, "Paused")
 
     button.draw_buttons(pause_buttons)
+  end
+
+  -- Enemy dice
+  local dice_scale_factor = 0.1
+  if randomize_enemy_timer >= randomize_enemy_limit then
+    love.graphics.draw(dice_indcators.modified, arenaWidth - 100, 0, 0, dice_scale_factor)
+  else
+    love.graphics.draw(dice_indcators.normal, arenaWidth - 100, 0, 0, dice_scale_factor)
+  end
+
+  if rolling_enemy_dice or finished_roll_but_not_finished_showing_result then
+    dice.draw_enemy(default_font)
   end
 end

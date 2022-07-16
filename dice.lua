@@ -113,9 +113,29 @@ local function draw(main_font)
   love.graphics.setFont(main_font)
 end
 
+local function draw_enemy(default_font)
+  love.graphics.setFont(dice_font)
+  love.graphics.setColor(1, 1, 1)
+
+  local half_single_sprite = sprite_sheet:getWidth() / 12
+  local scale_factor = 2
+
+  if playing then
+    draw_centered_text(0, 0, arenaWidth, 50, "Rolling The Dice...")
+  end
+  for i, animation in ipairs(animations) do
+    -- We only care about the first two animations
+    if i > 2 then
+      break
+    end
+    animation:draw(sprite_sheet, (arenaWidth * i / 3) - half_single_sprite * scale_factor, 75, 0, scale_factor, scale_factor)
+  end
+end
+
 dice.init = init
 dice.start = start
 dice.update = update
 dice.draw = draw
+dice.draw_enemy = draw_enemy
 
 return dice
