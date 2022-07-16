@@ -20,7 +20,7 @@ function love.load()
     -- Hurt box
     x = 0,
     y = arenaHeight / 2 - 5,
-    width = 64,
+    width = 100,
     height = 64,
     
     sprite_sheet = love.graphics.newImage('sprites/ship.png')
@@ -46,9 +46,10 @@ function love.load()
   enemies = {{
       x = areaWidth,
       y = love.math.random(arenaHeight),
-      width = 64,
+      width = 120,
       height = 64
     }}
+  enemy_sprite = love.graphics.newImage('sprites/destroyer.png')
 
   -- Images and sprites
   math.randomseed(os.time()) -- Make our numbers actually random
@@ -102,7 +103,7 @@ function love.update(dt)
     if bullet_timer >= bullet_timer_limit then
       bullet_timer = 0
       table.insert(bullets, {
-        x = ship.x + ship.width / 2,
+        x = ship.x + ship.width,
         y = ship.y + ship.height / 2,
         width = 8,
         height = 8
@@ -148,7 +149,7 @@ function love.update(dt)
     table.insert(enemies, {
       x = areaWidth,
       y = love.math.random(arenaHeight),
-      width = 64,
+      width = 120,
       height = 64
     })
     enemy_timer = 0
@@ -213,7 +214,7 @@ function love.draw()
   -- Draw the ship
   -- TODO: In the future, only draw the sprite
   love.graphics.setColor(0, 0, 1)
-  local ship_scale_factor = 2
+  local ship_scale_factor = 0.4
   love.graphics.rectangle('line', ship.x, ship.y, ship.width, ship.height)
   love.graphics.setColor(1, 1, 1)
   love.graphics.draw(ship.sprite_sheet, ship.x, ship.y, 0, ship_scale_factor, ship_scale_factor)
@@ -221,16 +222,17 @@ function love.draw()
   -- Draw the bullets
   local bullet_scale_factor = 0.5
   for bullet_index, bullet in ipairs(bullets) do
-    love.graphics.setColor(0, 1, 0)
-    -- love.graphics.rectangle('line', bullet.x, bullet.y, bullet.width, bullet.height) -- rect hitbox
     love.graphics.setColor(1, 1, 1)
     love.graphics.draw(bullet_sprite, bullet.x, bullet.y, 0, bullet_scale_factor, bullet_scale_factor)
   end
 
   -- Draw the enemies
+  local enemy_scale_factor = 0.3
   for enemy_index, enemy in ipairs(enemies) do
     love.graphics.setColor(1, 0, 0)
-    love.graphics.rectangle('fill', enemy.x, enemy.y, enemy.width, enemy.height)
+    love.graphics.rectangle('line', enemy.x, enemy.y, enemy.width, enemy.height) -- Hitbox
+    love.graphics.setColor(1, 1, 1)
+    love.graphics.draw(enemy_sprite, enemy.x, enemy.y - 15, 0, enemy_scale_factor, enemy_scale_factor)
   end
 
   -- Draw the dice if we are in the 
