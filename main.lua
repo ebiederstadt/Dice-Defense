@@ -32,7 +32,7 @@ end
 function update_enemy_properties(dice, properties)
     properties.max_speed = 400 + (dice[1] - 1) * 40 -- 400 - 600
     properties.acceleration = 200 + (dice[2] - 1) * 40 -- 200 - 600
-    properties.health = dice[3]
+    properties.health = dice[3] + 1
 end
 
 function love.load()
@@ -396,7 +396,7 @@ function love.update(dt)
     end
 
     -- First third: can adjust x and y position and accelerate
-    if enemy.x >= arenaWidth * 3 / 4 then
+    if enemy.x >= arenaWidth / 2 then
       enemy.speed_x = enemy.speed_x - enemy_properties.acceleration * dt
       if ship.y < enemy.y then
         enemy.speed_y = enemy.speed_y - enemy_properties.acceleration * dt
