@@ -10,7 +10,9 @@ local function new_player()
     width = 100,
     height = 64,
     
-    sprite_sheet = love.graphics.newImage('sprites/ship.png')
+    sprite_sheet = love.graphics.newImage('sprites/ship.png'),
+
+    should_draw = true
   }
 end
 
@@ -19,6 +21,7 @@ local function reset_player(ship)
   ship.speed_y = 0
   ship.x = 0
   ship.y = arenaHeight / 2 - 5
+  ship.should_draw = true
 end
 
 local function setup_properties_from_dice(dice_roles)

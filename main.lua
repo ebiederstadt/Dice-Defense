@@ -69,6 +69,8 @@ function love.load()
       finished_dice = false
       rolling_enemy_dice = false
       randomize_enemy_timer = 0
+      player_hurt_box.timer = 0
+      player_hurt_box.invincible = false
       sounds.win_theme:stop()
       sounds.lose_theme:stop()
       for i, v in ipairs(enemies) do
@@ -123,6 +125,12 @@ function love.load()
     end
   )
   dice_result = {}
+  heart_sprite = love.graphics.newImage('sprites/heart.png')
+  player_hurt_box = {
+    timer = 0.0,
+    max_time = 1.0,
+    invincible = false -- The player was recently hurt but has a few invincibility frames now
+  }
 
   background = love.graphics.newImage("sprites/background.png")
   background:setWrap("repeat", "repeat")
@@ -341,6 +349,16 @@ function love.update(dt)
     enemy_timer = 0
   end
 
+  if player_hurt_box.invincible then
+    player_hurt_box.timer = player_hurt_box.timer + dt
+    ship.should_draw = not ship.should_draw
+    if player_hurt_box.timer >= player_hurt_box.max_time then
+      player_hurt_box.invincible = false
+      player_hurt_box.timer = 0
+      ship.show_draw = true
+    end
+  end
+
   -- Move the enemies and check to see if they collided with the player or the bullets
   -- TODO: Set this randomly
   local enemy_speed = 200
@@ -351,10 +369,18 @@ function love.update(dt)
       table.remove(enemies, enemy_index)
     end
     if rect_collide(enemy, ship) then
-      win_state.lost = true
-      sounds.player_explosion:play()
-      sounds.main_theme:stop()
-      sounds.lose_theme:play()
+      if not player_hurt_box.invincible then
+        player_hurt_box.invincible = true
+        player_hurt_box.timer = 0
+        player_properties.health = player_properties.health - 1
+        sounds.player_explosion:play()
+
+        if player_properties.health <= 0 then
+          win_state.lost = true
+          sounds.main_theme:stop()
+          sounds.lose_theme:play()
+        end
+      end
     end
 
     for bullet_index = #bullets, 1, -1 do
@@ -418,11 +444,13 @@ function love.draw()
   
   -- Draw the ship
   -- TODO: In the future, only draw the sprite
-  love.graphics.setColor(0, 0, 1)
-  local ship_scale_factor = 0.4
-  love.graphics.rectangle('line', ship.x, ship.y, ship.width, ship.height)
-  love.graphics.setColor(1, 1, 1)
-  love.graphics.draw(ship.sprite_sheet, ship.x, ship.y, 0, ship_scale_factor, ship_scale_factor)
+  if ship.should_draw then
+    love.graphics.setColor(0, 0, 1)
+    local ship_scale_factor = 0.4
+    love.graphics.rectangle('line', ship.x, ship.y, ship.width, ship.height)
+    love.graphics.setColor(1, 1, 1)
+    love.graphics.draw(ship.sprite_sheet, ship.x, ship.y, 0, ship_scale_factor, ship_scale_factor)
+  end
 
   -- Draw the bullets
   local bullet_scale_factor = 0.5
@@ -455,6 +483,11 @@ function love.draw()
     love.graphics.draw(dice_indcators.modified, arenaWidth - 100, 0, 0, dice_scale_factor)
   else
     love.graphics.draw(dice_indcators.normal, arenaWidth - 100, 0, 0, dice_scale_factor)
+  end
+
+  -- Player health
+  for i = 1, player_properties.health do
+    love.graphics.draw(heart_sprite, arenaWidth - 120 - (i * 32) - 5, 0)
   end
 
   if rolling_enemy_dice or finished_roll_but_not_finished_showing_result then
