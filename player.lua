@@ -28,7 +28,7 @@ local function setup_properties_from_dice(dice_roles)
   return {
     max_speed = 300 + (dice_roles[1] - 1) * 120, -- 300 - 900
     acceleration = 300 + (dice_roles[2] - 1) * 140, -- 300- 1000
-    max_shooting_speed = 0.5 + (dice_roles[3] - 1) * 0.02, -- 0.5 t0 0.6,
+    max_shooting_speed = 0.3 + (dice_roles[3] - 1) * 0.02, -- 0.3 t0 0.4,
     health = dice_roles[4]
   }
 end
