@@ -165,6 +165,7 @@ function love.load()
     start_game = love.audio.newSource('sounds/doorOpen_002.ogg', 'static'),
     can_randomize = love.audio.newSource('sounds/computerNoise_000.ogg', 'static'),
     enter_main_game = love.audio.newSource('sounds/doorOpen_000.ogg', 'static'),
+    health_restored = love.audio.newSource('sounds/health.ogg', 'static'),
     main_theme = love.audio.newSource('sounds/VoxelRevolution.ogg', 'stream'),
     win_theme = love.audio.newSource('sounds/GettingitDone.ogg', 'stream'),
     lose_theme = love.audio.newSource('sounds/OneSlyMove.ogg', 'stream')
@@ -206,6 +207,10 @@ function love.keypressed(key)
   -- Enter will allow the user to randomize the enemy stats
   if key == 'return' then
     if randomize_enemy_timer >= randomize_enemy_limit and not rolling_enemy_dice then
+      if player_properties.health <= 3 then
+        player_properties.health = player_properties.health + 1
+        sounds.health_restored:play()
+      end
       randomize_enemy_timer = 0
       notified = false
       rolling_enemy_dice = true
