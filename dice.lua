@@ -117,9 +117,6 @@ local function draw_enemy(dice_font)
   local half_single_sprite = sprite_sheet:getWidth() / 12
   local scale_factor = 2
 
-  if playing then
-    draw_centered_text(0, 0, arenaWidth, 50, "Rolling The Dice...")
-  end
   for i, animation in ipairs(animations) do
     -- We only care about the first three animations
     if i > 3 then

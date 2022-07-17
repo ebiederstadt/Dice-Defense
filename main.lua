@@ -217,12 +217,6 @@ function love.keypressed(key)
       dice.start(2, 0.2)
     end
   end
-  -- TODO: remove me, just for testing for now
-  if key == 'p' then
-    win_state.won = true
-    sounds.main_theme:stop()
-    sounds.win_theme:play()
-  end
 end
 
 function love.update(dt)
@@ -344,6 +338,13 @@ function love.update(dt)
     ship.speed_y = 0
   end
 
+  -- Check to see if the player has won the game
+  if player_properties.kills >= win_condition then
+    win_state.won = true
+    sounds.main_theme:stop()
+    sounds.win_theme:play()
+  end
+
   -- Move the bullets, and remove them after the reach the edge of the screen
   local bullet_speed = 500
   for bullet_index = #bullets, 1, -1 do
@@ -417,6 +418,7 @@ function love.update(dt)
           enemy.health = enemy.health - 1
           sounds.enemy_explosion:play()
           if enemy.health <= 0 then
+            player_properties.kills = player_properties.kills + 1
             table.remove(enemies, enemy_index)
           end
         end
@@ -518,9 +520,18 @@ function love.draw()
     love.graphics.draw(dice_indcators.normal, arenaWidth - 100, 0, 0, dice_scale_factor)
   end
 
+  -- Player kill count
+  local kill_scale_factor = 0.18
+  local kill_edge = arenaWidth - 350
+  love.graphics.draw(enemy_sprite, kill_edge, 10, 0, kill_scale_factor, kill_scale_factor)
+  love.graphics.setFont(secondary_font)
+  love.graphics.print(player_properties.kills, kill_edge - 30, 10)
+  love.graphics.print("/ "..win_condition, kill_edge + 100, 10)
+  love.graphics.setFont(main_font)
+
   -- Player health
   for i = 1, player_properties.health do
-    love.graphics.draw(heart_sprite, arenaWidth - 120 - (i * 32) - 5, 0)
+    love.graphics.draw(heart_sprite, (i * 32) + 5, 0)
   end
 
   if rolling_enemy_dice or finished_roll_but_not_finished_showing_result then
