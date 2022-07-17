@@ -14,10 +14,5 @@ function draw_centered_text(rectX, rectY, rectWidth, rectHeight, text)
 end
 
 function create_font(size, set_font)
-	local font_path = 'fonts/VCR_OSD_MONO_1.001.ttf'
-  if love.filesystem.exists(font_path) then
-    local font = love.graphics.newFont(font_path, size)
-		return font
-  end
-	return nil
+  return love.graphics.newFont('fonts/VCR_OSD_MONO_1.001.ttf', size)
 end
