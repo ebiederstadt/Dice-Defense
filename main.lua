@@ -507,10 +507,7 @@ function love.draw()
   -- Draw the ship
   -- TODO: In the future, only draw the sprite
   if ship.should_draw then
-    love.graphics.setColor(0, 0, 1)
     local ship_scale_factor = 0.4
-    love.graphics.rectangle('line', ship.x, ship.y, ship.width, ship.height)
-    love.graphics.setColor(1, 1, 1)
     love.graphics.draw(ship.sprite_sheet, ship.x, ship.y, 0, ship_scale_factor, ship_scale_factor)
   end
 
@@ -525,9 +522,6 @@ function love.draw()
   local enemy_scale_factor = 0.3
   for enemy_index, enemy in ipairs(enemies) do
     if enemy.should_draw then
-      love.graphics.setColor(1, 0, 0)
-      love.graphics.rectangle('line', enemy.x, enemy.y, enemy.width, enemy.height) -- Hitbox
-      love.graphics.setColor(1, 1, 1)
       love.graphics.draw(enemy_sprite, enemy.x - 30, enemy.y, 0, enemy_scale_factor, enemy_scale_factor)
     end
   end

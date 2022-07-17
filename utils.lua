@@ -1,7 +1,7 @@
 arenaWidth = 800
 arenaHeight = 600
 
-win_condition = 15
+win_condition = 30
 
 ui_color = { 0.4, 0.4, 0.8, 0.8 }
 highlight_color = { 0.8, 0.4, 1.0, 0.8 }
