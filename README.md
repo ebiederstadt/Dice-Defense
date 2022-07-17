@@ -1,5 +1,7 @@
 # Dice-Defense
 
+Made for the GMTK Game Jam 2022.
+
 A fast paced side scrolling shooter where you get your stats based on the roll of the dice. Throughout the game you can roll the dice to change the enemy stats, which may make things easier or harder. Doing so at low HP may give you one HP back. Destroy 30 enemies to win the game!
 
 ## Running the game
