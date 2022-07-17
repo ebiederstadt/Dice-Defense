@@ -14,7 +14,6 @@ local function new_player()
   }
 end
 
--- Reset the player
 local function reset_player(ship)
   ship.speed_x = 0
   ship.speed_y = 0
@@ -22,9 +21,19 @@ local function reset_player(ship)
   ship.y = arenaHeight / 2 - 5
 end
 
+local function setup_properties_from_dice(dice_roles)
+  return {
+    max_speed = 300 + (dice_roles[1] - 1) * 120, -- 300 - 900
+    acceleration = 300 + (dice_roles[2] - 1) * 140, -- 300- 1000
+    max_shooting_speed = 0.5 + (dice_roles[3] - 1) * 0.02, -- 0.5 t0 0.6,
+    health = dice_roles[4]
+  }
+end
+
 local player = {
   new_player = new_player,
-  reset_player = reset_player
+  reset_player = reset_player,
+  setup_properties_from_dice = setup_properties_from_dice
 }
 
 return player

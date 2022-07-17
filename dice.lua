@@ -45,7 +45,7 @@ end
 -- Update the dice. Returns nil when time remains, and the four dice values when finished
 local function update(dt)
   if not playing then
-    return
+    return nil
   end
 
   timer = timer + dt
@@ -77,7 +77,7 @@ local function draw(dice_font)
     "Speed",
     "Acceleration",
     "Shooting Speed",
-    "Projectile Size"
+    "Health"
   }
   for i, animation in ipairs(animations) do
     animation:draw(sprite_sheet, (arenaWidth * i / 5) - half_single_sprite * scale_factor, 75, 0, scale_factor, scale_factor)

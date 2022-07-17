@@ -87,16 +87,10 @@ function love.load()
     end
   ))
 
-  -- TODO: Eventually, we will create this randomly
   ship = player.new_player()
 
   -- These properties will be set according to the dice roll we get at the start
-  player_properties = {
-    max_speed = 0,
-    acceleration = 0,
-    shooting_speed = 0,
-    projectile_size = 0
-  }
+  player_properties = {}
   enemy_properties = {
     max_speed = 3,
     previous_max_speed = 3,
@@ -106,9 +100,7 @@ function love.load()
     previous_health = 3
   }
 
-  -- TODO: Set this randomly
-  bullet_timer_limit = 0.5
-  bullet_timer = bullet_timer_limit
+  bullet_timer = 0
   bullets = {}
   bullet_sprite = love.graphics.newImage('sprites/blaster_shot.png')
 
@@ -223,14 +215,16 @@ function love.update(dt)
 
   -- Only update this if we are actually in the dice scene
   if not finished_dice then
-    -- TODO: Store the dice result and use it for the player properties
     dice_result = dice.update(dt)
+    if dice_result then
+      player_properties = player.setup_properties_from_dice(dice_result)
+      bullet_timer = player_properties.max_shooting_speed
+    end
   end
 
   if rolling_enemy_dice then
     enemy_dice_result = dice.update(dt)
     if enemy_dice_result then
-      print("Test!")
       rolling_enemy_dice = false
       finished_roll_but_not_finished_showing_result = true
       -- Update the enemy properties
@@ -257,28 +251,43 @@ function love.update(dt)
     return
   end
 
-  -- TODO: This will be set randomly
-  local shipSpeed = 100
-  -- TODO: It could be nice to let the users choose their controls (advanced feature)
+  -- TODO: It could be nice to let the users rebind their controls (advanced feature)
   -- Move the player
   if love.keyboard.isDown('w') then
-    ship.speed_y = ship.speed_y - shipSpeed * dt
+    ship.speed_y = ship.speed_y - player_properties.acceleration * dt
   end
   if love.keyboard.isDown('s') then
-    ship.speed_y = ship.speed_y + shipSpeed * dt
+    ship.speed_y = ship.speed_y + player_properties.acceleration * dt
   end
   if love.keyboard.isDown('a') then
-    ship.speed_x = ship.speed_x - shipSpeed * dt
+    ship.speed_x = ship.speed_x - player_properties.acceleration * dt
   end
   if love.keyboard.isDown('d') then
-    ship.speed_x = ship.speed_x + shipSpeed * dt
+    ship.speed_x = ship.speed_x + player_properties.acceleration * dt
+  end
+
+  if math.abs(ship.speed_x) > player_properties.max_speed then
+    print("You reached max speed!")
+    if ship.speed_x < 0 then
+      ship.speed_x = -player_properties.max_speed
+    else
+      ship.speed_x = player_properties.max_speed
+    end
+  end
+  if math.abs(ship.speed_y) > player_properties.max_speed then
+    print("You reached max speed!")
+    if ship.speed_y < 0 then
+      ship.speed_y = -player_properties.max_speed
+    else
+      ship.speed_y = player_properties.max_speed
+    end
   end
 
   -- Shoot bullets
   bullet_timer = bullet_timer + dt
 
   if love.keyboard.isDown('space') then
-    if bullet_timer >= bullet_timer_limit then
+    if bullet_timer >= player_properties.max_shooting_speed then
       bullet_timer = 0
       table.insert(bullets, {
         x = ship.x + ship.width,
@@ -291,7 +300,6 @@ function love.update(dt)
   end
 
   -- Move the ship and limit it to the arena bounds
-  -- TODO: needs to be polished
   ship.x = ship.x + ship.speed_x * dt
   ship.y = ship.y + ship.speed_y * dt
   if ship.x + ship.width > arenaWidth then
@@ -312,7 +320,6 @@ function love.update(dt)
   end
 
   -- Move the bullets, and remove them after the reach the edge of the screen
-  -- TODO: Movement speed could be something that we randomize
   local bullet_speed = 500
   for bullet_index = #bullets, 1, -1 do
     local bullet = bullets[bullet_index]
