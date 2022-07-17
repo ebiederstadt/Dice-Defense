@@ -113,9 +113,16 @@ function love.load()
       x = arenaWidth,
       y = love.math.random(arenaHeight),
       width = 120,
-      height = 64
+      height = 64,
+      health = enemy_properties.health,
+      should_draw = true,
+      hurtbox = {
+        invincible = false,
+        timer = 0
+      }
     }}
   enemy_sprite = love.graphics.newImage('sprites/destroyer.png')
+  enemy_hurtbox_limit = 0.2
 
   finished_dice = false
   dice.init(
@@ -344,7 +351,13 @@ function love.update(dt)
       x = arenaWidth,
       y = love.math.random(arenaHeight),
       width = 120,
-      height = 64
+      height = 64,
+      health = enemy_properties.health,
+      should_draw = true,
+      hurtbox = {
+        timer = 0,
+        invincible = false
+      }
     })
     enemy_timer = 0
   end
@@ -355,7 +368,7 @@ function love.update(dt)
     if player_hurt_box.timer >= player_hurt_box.max_time then
       player_hurt_box.invincible = false
       player_hurt_box.timer = 0
-      ship.show_draw = true
+      ship.should_draw = true
     end
   end
 
@@ -364,6 +377,17 @@ function love.update(dt)
   local enemy_speed = 200
   for enemy_index = #enemies, 1, -1 do
     local enemy = enemies[enemy_index]
+    -- Enemies have invincibility frames after they get hit
+    if enemy.hurtbox.invincible then
+      enemy.hurtbox.timer = enemy.hurtbox.timer + dt
+      enemy.should_draw = not enemy.should_draw
+      if enemy.hurtbox.timer >= enemy_hurtbox_limit then
+        enemy.hurtbox.invincible = false
+        enemy.hurtbox.timer = 0
+        enemy.should_draw = true
+      end
+    end
+
     enemy.x = enemy.x - enemy_speed * dt
     if enemy.x + enemy.width < 0 then
       table.remove(enemies, enemy_index)
@@ -386,9 +410,17 @@ function love.update(dt)
     for bullet_index = #bullets, 1, -1 do
       local bullet = bullets[bullet_index]
       if rect_collide(bullet, enemy) then
-        table.remove(bullets, bullet_index)
-        table.remove(enemies, enemy_index)
-        sounds.enemy_explosion:play()
+        if not enemy.hurtbox.invincible then
+          table.remove(bullets, bullet_index)
+
+          enemy.hurtbox.invincible = true
+          enemy.hurtbox.timer = 0
+          enemy.health = enemy.health - 1
+          sounds.enemy_explosion:play()
+          if enemy.health <= 0 then
+            table.remove(enemies, enemy_index)
+          end
+        end
       end
     end
   end
@@ -462,10 +494,12 @@ function love.draw()
   -- Draw the enemies
   local enemy_scale_factor = 0.3
   for enemy_index, enemy in ipairs(enemies) do
-    love.graphics.setColor(1, 0, 0)
-    love.graphics.rectangle('line', enemy.x, enemy.y, enemy.width, enemy.height) -- Hitbox
-    love.graphics.setColor(1, 1, 1)
-    love.graphics.draw(enemy_sprite, enemy.x, enemy.y - 15, 0, enemy_scale_factor, enemy_scale_factor)
+    if enemy.should_draw then
+      love.graphics.setColor(1, 0, 0)
+      love.graphics.rectangle('line', enemy.x, enemy.y, enemy.width, enemy.height) -- Hitbox
+      love.graphics.setColor(1, 1, 1)
+      love.graphics.draw(enemy_sprite, enemy.x, enemy.y - 15, 0, enemy_scale_factor, enemy_scale_factor)
+    end
   end
 
   if is_paused then
