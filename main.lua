@@ -46,12 +46,6 @@ function love.load()
       sounds.main_theme:play()
     end
   ))
-  table.insert(main_buttons , button.newButton(
-    "How to Play",
-    function()
-      print('TODO: implement the how to play screen')
-    end
-  ))
   table.insert(main_buttons, button.newButton(
     "Quit",
     function()
@@ -72,6 +66,9 @@ function love.load()
       win_state.lost = false
       is_paused = false
       is_started = false
+      finished_dice = false
+      rolling_enemy_dice = false
+      randomize_enemy_timer = 0
       sounds.win_theme:stop()
       sounds.lose_theme:stop()
       for i, v in ipairs(enemies) do
@@ -126,6 +123,7 @@ function love.load()
   dice.init(
     function()
       finished_dice = true
+      sounds.enter_main_game:play()
     end
   )
   dice_result = {}
@@ -148,6 +146,7 @@ function love.load()
     player_explosion = love.audio.newSource('sounds/explosionCrunch_003.ogg', 'static'),
     start_game = love.audio.newSource('sounds/doorOpen_002.ogg', 'static'),
     can_randomize = love.audio.newSource('sounds/computerNoise_000.ogg', 'static'),
+    enter_main_game = love.audio.newSource('sounds/doorOpen_000.ogg', 'static'),
     main_theme = love.audio.newSource('sounds/VoxelRevolution.ogg', 'stream'),
     win_theme = love.audio.newSource('sounds/GettingitDone.ogg', 'stream'),
     lose_theme = love.audio.newSource('sounds/OneSlyMove.ogg', 'stream')
@@ -330,7 +329,7 @@ function love.update(dt)
   for enemy_index = #enemies, 1, -1 do
     local enemy = enemies[enemy_index]
     enemy.x = enemy.x - enemy_speed * dt
-    if enemy.x < 0 then
+    if enemy.x + enemy.width < 0 then
       table.remove(enemies, enemy_index)
     end
     if rect_collide(enemy, ship) then
@@ -379,8 +378,6 @@ function love.draw()
   end
   
   if win_state.won then
-    love.graphics.setColor(0.008, 0.051, 0.122)
-    love.graphics.rectangle('fill', arenaWidth / 2 - 150, 100, 300, 100, 10, 10)
     love.graphics.setColor(1, 1, 1)
     draw_centered_text(0, 100, arenaWidth, 0, "You Won! Well Done")
 
