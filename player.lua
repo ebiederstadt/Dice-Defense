@@ -7,8 +7,8 @@ local function new_player()
     -- Hurt box
     x = 0,
     y = arenaHeight / 2 - 5,
-    width = 100,
-    height = 64,
+    width = 50,
+    height = 58,
     
     sprite_sheet = love.graphics.newImage('sprites/ship.png'),
 

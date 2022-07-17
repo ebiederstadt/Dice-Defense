@@ -12,6 +12,21 @@ function rect_collide(first_rect, second_rect)
          first_rect.y + first_rect.height > second_rect.y and first_rect.y < second_rect.y + second_rect.width
 end
 
+function create_enemy(x, y)
+  return {
+    x = x,
+    y = y,
+    width = 72,
+    height = 64,
+    health = enemy_properties.health,
+    should_draw = true,
+    hurtbox = {
+      invincible = false,
+      timer = 0
+    }
+  }
+end
+
 function love.load()
   love.graphics.setDefaultFilter('nearest', 'nearest')
   math.randomseed(os.time())
@@ -109,19 +124,9 @@ function love.load()
   -- TODO: This can be one of the things that I set randomly
   enemy_timer_limit = 1.0
   enemy_timer = 0
-  enemies = {{
-      x = arenaWidth,
-      y = love.math.random(arenaHeight),
-      width = 120,
-      height = 64,
-      health = enemy_properties.health,
-      should_draw = true,
-      hurtbox = {
-        invincible = false,
-        timer = 0
-      }
-    }}
-  enemy_sprite = love.graphics.newImage('sprites/destroyer.png')
+  enemies = { create_enemy(arenaWidth, love.math.random(arenaHeight)) }
+  print(enemies[1].hurtbox.timer)
+  enemy_sprite = love.graphics.newImage('sprites/ufo.png')
   enemy_hurtbox_limit = 0.2
 
   finished_dice = false
@@ -347,18 +352,7 @@ function love.update(dt)
   -- Add new enemies
   enemy_timer = enemy_timer + dt
   if enemy_timer >= enemy_timer_limit then
-    table.insert(enemies, {
-      x = arenaWidth,
-      y = love.math.random(arenaHeight),
-      width = 120,
-      height = 64,
-      health = enemy_properties.health,
-      should_draw = true,
-      hurtbox = {
-        timer = 0,
-        invincible = false
-      }
-    })
+    table.insert(enemies, create_enemy(arenaWidth, love.math.random(arenaHeight)))
     enemy_timer = 0
   end
 
@@ -498,7 +492,7 @@ function love.draw()
       love.graphics.setColor(1, 0, 0)
       love.graphics.rectangle('line', enemy.x, enemy.y, enemy.width, enemy.height) -- Hitbox
       love.graphics.setColor(1, 1, 1)
-      love.graphics.draw(enemy_sprite, enemy.x, enemy.y - 15, 0, enemy_scale_factor, enemy_scale_factor)
+      love.graphics.draw(enemy_sprite, enemy.x - 30, enemy.y, 0, enemy_scale_factor, enemy_scale_factor)
     end
   end
 
