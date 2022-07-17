@@ -1,4 +1,4 @@
-name = "GMTK Game Jam"
+name = "Dice Defense"
 default_targets = ["win64", "lovejs"]
 build_directory = "makelove-build"
 

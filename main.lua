@@ -472,7 +472,7 @@ function love.draw()
     love.graphics.setColor(0.008, 0.051, 0.122)
     love.graphics.rectangle('fill', arenaWidth / 2 - 150, 50, 300, 100, 10, 10)
     love.graphics.setColor(1, 1, 1)
-    draw_centered_text(0, 100, arenaWidth, 0, "Rolling Racer") -- TODO: need a better name
+    draw_centered_text(0, 100, arenaWidth, 0, "Dice Defense")
 
     button.draw_buttons(main_buttons)
     return

@@ -1,3 +1,3 @@
 function love.conf(t)
-  t.window.title = "Rolling Racer"
+  t.window.title = "Dice Defense"
 end
