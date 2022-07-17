@@ -127,7 +127,7 @@ function love.load()
   bullet_sprite = love.graphics.newImage('sprites/blaster_shot.png')
 
   -- TODO: This can be one of the things that I set randomly
-  enemy_timer_limit = 1.0
+  enemy_timer_limit = 0.6
   enemy_timer = 0
   enemies = { create_enemy(arenaWidth, love.math.random(arenaHeight)) }
   enemy_sprite = love.graphics.newImage('sprites/ufo.png')
@@ -211,7 +211,13 @@ function love.keypressed(key)
   -- Enter will allow the user to randomize the enemy stats
   if key == 'return' then
     if randomize_enemy_timer >= randomize_enemy_limit and not rolling_enemy_dice then
-      if player_properties.health <= 2 then
+      if player_properties.health == 2 then
+        -- Give a 50/50 shot at getting more health
+        if love.math.random() >= 0.5 then
+          player_properties.health = player_properties.health + 1
+          sounds.health_restored:play()
+        end
+      elseif player_properties.health == 1 then
         player_properties.health = player_properties.health + 1
         sounds.health_restored:play()
       end
@@ -505,7 +511,6 @@ function love.draw()
   end
   
   -- Draw the ship
-  -- TODO: In the future, only draw the sprite
   if ship.should_draw then
     local ship_scale_factor = 0.4
     love.graphics.draw(ship.sprite_sheet, ship.x, ship.y, 0, ship_scale_factor, ship_scale_factor)
