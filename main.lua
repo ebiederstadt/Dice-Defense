@@ -211,7 +211,7 @@ function love.keypressed(key)
   -- Enter will allow the user to randomize the enemy stats
   if key == 'return' then
     if randomize_enemy_timer >= randomize_enemy_limit and not rolling_enemy_dice then
-      if player_properties.health <= 3 then
+      if player_properties.health <= 2 then
         player_properties.health = player_properties.health + 1
         sounds.health_restored:play()
       end
