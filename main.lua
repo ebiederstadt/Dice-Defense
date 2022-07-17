@@ -99,7 +99,11 @@ function love.load()
   }
   enemy_properties = {
     max_speed = 3,
-    acceleration = 3
+    previous_max_speed = 3,
+    acceleration = 3,
+    previous_acceleration = 3,
+    health = 3,
+    previous_health = 3
   }
 
   -- TODO: Set this randomly
@@ -135,6 +139,8 @@ function love.load()
 
   -- Fonts
   main_font = create_font(64)
+  secondary_font = create_font(32)
+  third_font = create_font(16)
   if main_font then
     love.graphics.setFont(main_font)
   end
@@ -215,10 +221,11 @@ function love.update(dt)
     return
   end
 
-  dice_result = dice.update(dt)
-  -- TODO: Do something with the dice!
-  -- if dice_result then
-  -- end
+  -- Only update this if we are actually in the dice scene
+  if not finished_dice then
+    -- TODO: Store the dice result and use it for the player properties
+    dice_result = dice.update(dt)
+  end
 
   if rolling_enemy_dice then
     enemy_dice_result = dice.update(dt)
@@ -226,17 +233,21 @@ function love.update(dt)
       print("Test!")
       rolling_enemy_dice = false
       finished_roll_but_not_finished_showing_result = true
-      for i, dice in ipairs(enemy_dice_result) do
-        -- TODO: Do something with the result
-        print(dice)
-      end
+      -- Update the enemy properties
+      enemy_properties.max_speed = enemy_dice_result[1]
+      enemy_properties.acceleration = enemy_dice_result[2]
+      enemy_properties.health = enemy_dice_result[3]
     end
   end
 
   if finished_roll_but_not_finished_showing_result then
     dice_result_timer = dice_result_timer + dt
     if dice_result_timer >= time_to_show_dice then
+      -- Reset the state
       finished_roll_but_not_finished_showing_result = false
+      enemy_properties.previous_max_speed = enemy_properties.max_speed
+      enemy_properties.previous_acceleration = enemy_properties.acceleration
+      enemy_properties.previous_health = enemy_properties.health
       dice_result_timer = 0
     end
   end
@@ -373,7 +384,8 @@ function love.draw()
   end
 
   if not finished_dice then
-    dice.draw(main_font)
+    dice.draw(secondary_font)
+    love.graphics.setFont(main_font)
     return
   end
   
@@ -439,6 +451,38 @@ function love.draw()
   end
 
   if rolling_enemy_dice or finished_roll_but_not_finished_showing_result then
-    dice.draw_enemy(default_font)
+    dice.draw_enemy(secondary_font)
+  end
+  if finished_roll_but_not_finished_showing_result then
+    love.graphics.setFont(third_font)
+    local bad_color = { 0.839, 0.188, 0.192 };
+    local good_color = { 0.18, 0.835, 0.451 };
+    if enemy_properties.max_speed > enemy_properties.previous_max_speed then
+      love.graphics.setColor(unpack(bad_color))
+      love.graphics.print("Speed++", arenaWidth / 4 - 50, 300)
+    end
+    if enemy_properties.max_speed <= enemy_properties.previous_max_speed then
+      love.graphics.setColor(unpack(good_color))
+      love.graphics.print("Speed--", arenaWidth / 4 - 50, 300)
+    end
+    if enemy_properties.acceleration > enemy_properties.previous_acceleration then
+      love.graphics.setColor(unpack(bad_color))
+      love.graphics.print("Acceleration++", arenaWidth / 2 - 100, 300)
+    end
+    if enemy_properties.acceleration <= enemy_properties.previous_acceleration then
+      love.graphics.setColor(unpack(good_color))
+      love.graphics.print("Acceleration--", arenaWidth / 2 - 100, 300)
+    end
+    if enemy_properties.health > enemy_properties.previous_health then
+      love.graphics.setColor(unpack(bad_color))
+      love.graphics.print("Health++", arenaWidth * 3 / 4 - 50, 300)
+    end
+    if enemy_properties.health <= enemy_properties.previous_health then
+      love.graphics.setColor(unpack(good_color))
+      love.graphics.print("Health--", arenaWidth * 3/4 - 50, 300)
+    end
+
+    love.graphics.setFont(main_font)
+    love.graphics.setColor(1, 1, 1, 1)
   end
 end

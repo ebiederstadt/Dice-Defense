@@ -22,7 +22,6 @@ local function init(f)
   random_values = {}
   playing = false
   dice_stage_complete = false
-  dice_font = create_font(32)
   start_button = button.newButton("Start", f)
 end
 
@@ -69,7 +68,7 @@ local function update(dt)
   end
 end
 
-local function draw(main_font)
+local function draw(dice_font)
   love.graphics.setFont(dice_font)
   love.graphics.setColor(1, 1, 1)
   local scale_factor = 2
@@ -109,11 +108,9 @@ local function draw(main_font)
     end
     button.draw_button_custom_pos(start_button, (arenaWidth * 0.66), 490)
   end
-  
-  love.graphics.setFont(main_font)
 end
 
-local function draw_enemy(default_font)
+local function draw_enemy(dice_font)
   love.graphics.setFont(dice_font)
   love.graphics.setColor(1, 1, 1)
 
@@ -124,11 +121,11 @@ local function draw_enemy(default_font)
     draw_centered_text(0, 0, arenaWidth, 50, "Rolling The Dice...")
   end
   for i, animation in ipairs(animations) do
-    -- We only care about the first two animations
-    if i > 2 then
+    -- We only care about the first three animations
+    if i > 3 then
       break
     end
-    animation:draw(sprite_sheet, (arenaWidth * i / 3) - half_single_sprite * scale_factor, 75, 0, scale_factor, scale_factor)
+    animation:draw(sprite_sheet, (arenaWidth * i / 4) - half_single_sprite * scale_factor, 75, 0, scale_factor, scale_factor)
   end
 end
 
