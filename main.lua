@@ -16,6 +16,8 @@ function create_enemy(x, y)
   return {
     x = x,
     y = y,
+    speed_x = 0,
+    speed_y = 0,
     width = 72,
     height = 64,
     health = enemy_properties.health,
@@ -25,6 +27,12 @@ function create_enemy(x, y)
       timer = 0
     }
   }
+end
+
+function update_enemy_properties(dice, properties)
+    properties.max_speed = 400 + (dice[1] - 1) * 40 -- 400 - 600
+    properties.acceleration = 200 + (dice[2] - 1) * 40 -- 200 - 600
+    properties.health = dice[3]
 end
 
 function love.load()
@@ -106,16 +114,13 @@ function love.load()
 
   ship = player.new_player()
 
-  -- These properties will be set according to the dice roll we get at the start
   player_properties = {}
   enemy_properties = {
-    max_speed = 3,
     previous_max_speed = 3,
-    acceleration = 3,
     previous_acceleration = 3,
-    health = 3,
     previous_health = 3
   }
+  update_enemy_properties({3, 3, 3}, enemy_properties)
 
   bullet_timer = 0
   bullets = {}
@@ -125,7 +130,6 @@ function love.load()
   enemy_timer_limit = 1.0
   enemy_timer = 0
   enemies = { create_enemy(arenaWidth, love.math.random(arenaHeight)) }
-  print(enemies[1].hurtbox.timer)
   enemy_sprite = love.graphics.newImage('sprites/ufo.png')
   enemy_hurtbox_limit = 0.2
 
@@ -247,9 +251,7 @@ function love.update(dt)
       rolling_enemy_dice = false
       finished_roll_but_not_finished_showing_result = true
       -- Update the enemy properties
-      enemy_properties.max_speed = enemy_dice_result[1]
-      enemy_properties.acceleration = enemy_dice_result[2]
-      enemy_properties.health = enemy_dice_result[3]
+      update_enemy_properties(enemy_dice_result, enemy_properties)
     end
   end
 
@@ -374,7 +376,6 @@ function love.update(dt)
 
   -- Move the enemies and check to see if they collided with the player or the bullets
   -- TODO: Set this randomly
-  local enemy_speed = 200
   for enemy_index = #enemies, 1, -1 do
     local enemy = enemies[enemy_index]
     -- Enemies have invincibility frames after they get hit
@@ -388,7 +389,35 @@ function love.update(dt)
       end
     end
 
-    enemy.x = enemy.x - enemy_speed * dt
+    -- First third: can adjust x and y position and accelerate
+    if enemy.x >= arenaWidth * 3 / 4 then
+      enemy.speed_x = enemy.speed_x - enemy_properties.acceleration * dt
+      if ship.y < enemy.y then
+        enemy.speed_y = enemy.speed_y - enemy_properties.acceleration * dt
+      else
+        enemy.speed_y = enemy.speed_y + enemy_properties.acceleration * dt
+      end
+    else
+      enemy.speed_y = 0
+    end
+    enemy.x = enemy.x + enemy.speed_x * dt
+    enemy.y = enemy.y + enemy.speed_y * dt
+
+    if math.abs(enemy.speed_x) > enemy_properties.max_speed then
+      if enemy.speed_x < 0 then
+        enemy.speed_x = -enemy_properties.max_speed
+      else
+        enemy.speed_x = enemy_properties.max_speed
+      end
+    end
+    if math.abs(enemy.speed_y) > enemy_properties.max_speed then
+      if enemy.speed_y < 0 then
+        enemy.speed_y = -enemy_properties.max_speed
+      else
+        enemy.speed_y = enemy_properties.max_speed
+      end
+    end
+    
     if enemy.x + enemy.width < 0 then
       table.remove(enemies, enemy_index)
     end
